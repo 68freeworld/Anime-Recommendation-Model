@@ -141,121 +141,94 @@ def itemCF_list(user, top_n=500):
     return sorted(scores.items(), key=lambda x:x[1], reverse=True)[:top_n]
 
 # ---------------- 6. HYBRID recommender ----------------------
-def HybridCF(user, rating_df, top_n=10, alpha=0.6):
+def HybridCF(user, rating_df, top_n=10, alpha=0.4):
     precomps(rating_df)
     u_preds = dict(uCF_list(user, top_n=1000))
     i_preds = dict(itemCF_list(user, top_n=1000))
-    movies  = set(u_preds)|set(i_preds)
-    hybrid  = {}
+    movies = set(u_preds) | set(i_preds)
+    hybrid = {}
+
+    # Combine predictions into a hybrid score
     for m in movies:
         if m in u_preds and m in i_preds:
-            hybrid[m] = alpha*u_preds[m] + (1-alpha)*i_preds[m]
+            hybrid[m] = alpha * u_preds[m] + (1 - alpha) * i_preds[m]
         elif m in u_preds:
             hybrid[m] = u_preds[m]
         else:
             hybrid[m] = i_preds[m]
-    recs = pd.DataFrame(sorted(hybrid.items(), key=lambda x:x[1], reverse=True)[:top_n], 
-             columns=['anime_id', 'Hybrid_Score'])
-    id_name = rating_df[['anime_id','anime_name']].drop_duplicates()
-    recs = recs.merge(
-        id_name,
-        on='anime_id',
-        how='left'
-    )
-    recs = recs[['anime_name', 'anime_id']]
-    return recs
 
+    # Create a DataFrame from the hybrid scores
+    recs = pd.DataFrame(sorted(hybrid.items(), key=lambda x: x[1], reverse=True)[:top_n],
+                        columns=['anime_id', 'Hybrid_Score'])
+
+    # Merge with anime names
+    id_name = rating_df[['anime_id', 'anime_name']].drop_duplicates()
+    recs = recs.merge(id_name, on='anime_id', how='left')
+
+    # Select and reorder columns, reset the index without adding an index column
+    recs = recs[['anime_name', 'anime_id']]
+    recs = recs.reset_index(drop=True)
+    
+    return recs
 
 
 # =============================================================
 # 1. HELPER FUNCTIONS
 # =============================================================
-def add_weighted_score(df, w1=0.5, w2=0.5):
-    """
-    Adds column 'Weighted_Score' to *df* using your W1/W2 formula.
-    """
-    max_n = df["Num_Ratings"].max()
-    max_r = df["Avg_Rating"].max()
+import pandas as pd
+from sklearn.preprocessing import MinMaxScaler
 
-    if max_n == 0 or max_r == 0:
-        raise ValueError("Max ratings or max score is zero – cannot normalise.")
-
-    df["Norm_Num_Ratings"] = df["Num_Ratings"] / max_n
-    df["Norm_Avg_Rating"]  = df["Avg_Rating"] / max_r
-    df["Weighted_Score"]   = w1*df["Norm_Num_Ratings"] + w2*df["Norm_Avg_Rating"]
-    return df
-
-
-def add_bayesian_score(df, ratings_df):
-    """
-    Adds column 'Bayesian_Rating' to *df* using standard Bayesian averaging.
-    """
-    m = ratings_df["rating"].mean()                 # global mean
-    C = df["Num_Ratings"].mean()                    # average vote-count
-
-    df["Bayesian_Rating"] = (
-        (C * m + df["Num_Ratings"] * df["Avg_Rating"])
-        / (C + df["Num_Ratings"])
-    )
-    return df
-
-def hybrid_npr(rating_df_clean, anime_df_clean, top_n=10, alpha=0.7):
+def hybrid_npr(rating_df_clean, anime_df_clean, top_n=10, alpha=0.5):
+    # Aggregate and merge data
     anime_stats = (
         rating_df_clean
-            .groupby("anime_id")
-            .agg(Num_Ratings=("rating", "size"),
-                Avg_Rating =("rating", "mean"))
-            .reset_index()
-            .merge(anime_df_clean[["anime_id", "anime_name"]], on="anime_id")   # add names
+        .groupby("anime_id")
+        .agg(Num_Ratings=("rating", "size"),
+             Avg_Rating=("rating", "mean"))
+        .reset_index()
+        .merge(anime_df_clean[["anime_id", "anime_name"]], on="anime_id")
     )
-    # =============================================================
-    # 2. COMPUTE BOTH SCORES
-    # =============================================================
+
+    # Compute weighted and Bayesian scores
     anime_stats = add_weighted_score(anime_stats, w1=0.5, w2=0.5)
     anime_stats = add_bayesian_score(anime_stats, rating_df_clean)
 
-    # normalise both columns to 0-1 before blending
-    from sklearn.preprocessing import MinMaxScaler
+    # Normalize scores
     scaler = MinMaxScaler()
     anime_stats[["Weighted_norm", "Bayesian_norm"]] = scaler.fit_transform(
         anime_stats[["Weighted_Score", "Bayesian_Rating"]]
     )
 
-    # =============================================================
-    # 3. HYBRID  (70 % Bayesian, 30 % Weighted)
-    # =============================================================
-    alpha = 0.7          # give more weight to Bayesian
+    # Calculate hybrid score
     anime_stats["Hybrid_Score"] = (
-        alpha   * anime_stats["Bayesian_norm"]
-        + (1-alpha) * anime_stats["Weighted_norm"]
+        alpha * anime_stats["Bayesian_norm"] +
+        (1 - alpha) * anime_stats["Weighted_norm"]
     )
 
-    # -------------------------------------------------------------
-    TOP_N = 10
-    hybrid_recs = (
+    # Select top N recommendations
+    top_recs = (
         anime_stats
         .sort_values("Hybrid_Score", ascending=False)
-        .loc[:, ["anime_name", "Avg_Rating", "Num_Ratings",
-                "Weighted_Score", "Bayesian_Rating", "Hybrid_Score"]]
-        .head(TOP_N)
+        .loc[:, ["anime_name", "anime_id"]]
+        .head(top_n)
         .reset_index(drop=True)
     )
 
-    print(f"\nTop {TOP_N} Anime – Hybrid (70 % Bayesian, 30 % Weighted):\n")
-    print(hybrid_recs.to_string(index=False, formatters={
-            "Avg_Rating":     "{:.2f}".format,
-            "Weighted_Score": "{:.3f}".format,
-            "Bayesian_Rating":"{:.3f}".format,
-            "Hybrid_Score":   "{:.3f}".format,
-        }))
+    return top_recs
 
-    # --- after computing `hybrid_recs` as above -------------------
-    top_names = hybrid_recs["anime_name"].tolist()
+def add_weighted_score(df, w1=0.5, w2=0.5):
+    max_n = df["Num_Ratings"].max()
+    max_r = df["Avg_Rating"].max()
+    df["Norm_Num_Ratings"] = df["Num_Ratings"] / max_n
+    df["Norm_Avg_Rating"] = df["Avg_Rating"] / max_r
+    df["Weighted_Score"] = w1 * df["Norm_Num_Ratings"] + w2 * df["Norm_Avg_Rating"]
+    return df
 
-    print(f"We recommend you these {TOP_N} Anime:")
-    for name in top_names:
-        print(name)
-
+def add_bayesian_score(df, ratings_df):
+    C = df["Num_Ratings"].mean()
+    m = ratings_df["rating"].mean()
+    df["Bayesian_Rating"] = (C * m + df["Num_Ratings"] * df["Avg_Rating"]) / (C + df["Num_Ratings"])
+    return df
     # If you literally need the list object:
     # return top_names   # inside a function
 
@@ -340,8 +313,9 @@ def HybridContent(title: str,
               .sort_values('Hybrid', ascending=False)
               .head(top_n)
               .reset_index())
-
-    return recs.rename(columns={'index': 'anime_name'})
+    recs.rename(columns={'index': 'anime_name'})
+    recs=recs["anime_name"]
+    return recs
 
 
 
