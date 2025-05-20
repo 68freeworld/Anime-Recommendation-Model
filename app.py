@@ -4,8 +4,8 @@ from models import hybrid_npr  # Make sure this is in models.py
 import os
 
 # Load data
-anime_df_clean = pd.read_pickle("anime_df_clean.pkl")
-rating_df_clean = pd.read_pickle("rating_df_clean.pkl")
+anime_df_clean = pd.read_pickle("anime_df_final.pk")
+rating_df_clean = pd.read_pickle("rating_df_final.pk")
 
 app = Flask(__name__, static_folder='frontend/build', static_url_path='')
 
