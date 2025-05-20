@@ -1,0 +1,5 @@
+Flask
+pandas
+numpy
+scikit-learn
+# plus any library used in models.py
