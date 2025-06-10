@@ -38,7 +38,7 @@ function AnimeDetail() {
     <div className="App">
       <header>
         <h1>{animeName}</h1>
-        <button onClick={() => navigate(-1)}>Back</button>
+        <button className="back-button" onClick={() => navigate(-1)}>Back</button>
       </header>
       <main>
         {loading && (
