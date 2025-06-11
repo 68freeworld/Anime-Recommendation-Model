@@ -2,7 +2,6 @@
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   text-align: center;
   padding: 2rem;
-  background: #1e1e1e;
   color: white;
   min-height: 100vh;
 }
@@ -42,6 +41,9 @@ h1 {
   object-fit: cover;
   margin-right: 1rem;
   border-radius: 4px;
+  display: block;
+  line-height: 210px;
+  text-align: center;
 }
 
 .search {
@@ -72,4 +74,44 @@ h1 {
 .no-results {
   margin-top: 1rem;
   color: #ff8080;
+}
+
+.clickable {
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.clickable:hover {
+  background: #3e3e3e;
+}
+
+.progress {
+  background: #444;
+  border-radius: 4px;
+  overflow: hidden;
+  margin: 1rem auto;
+  height: 20px;
+  max-width: 400px;
+}
+
+.progress div {
+  height: 100%;
+  background: #00d8ff;
+  width: 0%;
+  transition: width 0.3s ease;
+}
+
+.back-button {
+  padding: 0.5rem 1rem;
+  border: none;
+  background: #00d8ff;
+  color: #1e1e1e;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-top: 0.5rem;
+  transition: background 0.2s;
+}
+
+.back-button:hover {
+  background: #00b0cc;
 }
