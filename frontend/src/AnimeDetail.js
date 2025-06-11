@@ -11,6 +11,8 @@ function AnimeDetail() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    setProgress(0);
+    setLoading(true);
     let pct = 0;
     const timer = setInterval(() => {
       pct += 10;

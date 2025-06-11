@@ -8,6 +8,8 @@ function HomePage() {
   const [recommendations, setRecommendations] = useState([]);
   const [query, setQuery] = useState('');
   const [results, setResults] = useState([]);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [searchProgress, setSearchProgress] = useState(0);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -20,10 +22,27 @@ function HomePage() {
   const handleSearch = (e) => {
     e.preventDefault();
     if (!query.trim()) return;
+    setResults([]);
+    setSearchLoading(true);
+    setSearchProgress(0);
+
+    let pct = 0;
+    const timer = setInterval(() => {
+      pct += 10;
+      if (pct < 90) setSearchProgress(pct);
+    }, 200);
+
     fetch(`/api/recommend?title=${encodeURIComponent(query)}`)
       .then(res => res.json())
-      .then(data => setResults(data))
-      .catch(err => console.error('Failed to fetch search', err));
+      .then(data => {
+        setResults(data);
+        setSearchProgress(100);
+      })
+      .catch(err => console.error('Failed to fetch search', err))
+      .finally(() => {
+        clearInterval(timer);
+        setSearchLoading(false);
+      });
   };
 
   const goToDetail = (anime) => {
@@ -46,6 +65,9 @@ function HomePage() {
       </header>
 
       <main>
+        {searchLoading && (
+          <div className="progress"><div style={{width: `${searchProgress}%`}} /></div>
+        )}
         {results.length > 0 && (
           <AnimeList title={`Results for \"${query}\"`} list={results} onSelect={goToDetail} />
         )}
