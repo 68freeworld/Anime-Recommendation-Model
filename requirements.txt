@@ -3,3 +3,5 @@ pandas
 numpy
 scikit-learn
 # plus any library used in models.py
+requests
+# plus any library used in models.py
