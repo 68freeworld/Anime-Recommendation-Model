@@ -11,13 +11,15 @@ pd.set_option('display.max_columns', None)
 pd.set_option('display.max_rows', None)
 
 
-#---------- load ----------
-with open("rating_df_final.pk", "rb") as f:
-    rating_df = pickle.load(f)
-with open("anime_df_final.pk", "rb") as f:
-    anime_df = pickle.load(f)
+# ---------- data loader ----------
+def load_data(rating_path="rating_df_final.pk", anime_path="anime_df_final.pk"):
+    """Load and return the rating and anime data frames."""
+    with open(rating_path, "rb") as f:
+        rating_df = pickle.load(f)
+    with open(anime_path, "rb") as f:
+        anime_df = pickle.load(f)
+    return rating_df, anime_df
 
-import pandas as pd, numpy as np, pickle, os
 from scipy.sparse import csr_matrix, vstack
 from sklearn.metrics.pairwise import cosine_similarity
 # from tqdm.notebook import tqdm
@@ -175,10 +177,11 @@ def HybridCF(user, rating_df, top_n=10, alpha=0.4):
 # =============================================================
 # 1. HELPER FUNCTIONS
 # =============================================================
-import pandas as pd
 from sklearn.preprocessing import MinMaxScaler
 
-def hybrid_npr(rating_df_clean, anime_df_clean, top_n=10, alpha=0.5):
+def hybrid_npr(rating_df_clean=None, anime_df_clean=None, top_n=10, alpha=0.5):
+    if rating_df_clean is None or anime_df_clean is None:
+        rating_df_clean, anime_df_clean = load_data()
     # Aggregate and merge data
     anime_stats = (
         rating_df_clean
@@ -236,7 +239,7 @@ def add_bayesian_score(df, ratings_df):
 
 
 def HybridContent(title: str,
-                  anime_df: pd.DataFrame,
+                  anime_df: pd.DataFrame = None,
                   top_n: int = 10,
                   alpha: float = 0.7) -> pd.DataFrame:
     """
@@ -260,6 +263,8 @@ def HybridContent(title: str,
     pd.DataFrame  (top_n rows)
         Columns: ['anime_name', 'TFIDF', 'Jaccard', 'Hybrid']
     """
+    if anime_df is None:
+        _, anime_df = load_data()
     # ------------------------------------------------------------
     # 0. basic checks
     # ------------------------------------------------------------
