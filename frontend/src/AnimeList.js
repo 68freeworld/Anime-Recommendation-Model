@@ -1,5 +1,7 @@
 import React from 'react';
 
+const PLACEHOLDER = 'https://media.giphy.com/media/14uQ3cOFteDaU/giphy.gif';
+
 function AnimeList({ title, list, onSelect }) {
   if (!list || list.length === 0) {
     return null;
@@ -14,9 +16,12 @@ function AnimeList({ title, list, onSelect }) {
             <span className="rank">#{idx + 1}</span>
             <img
               className="poster"
-              src={anime.image_url || 'https://via.placeholder.com/150x210?text=No+Image'}
+              src={anime.image_url || PLACEHOLDER}
               alt={anime.anime_name}
               loading="lazy"
+              onError={(e) => {
+                e.currentTarget.src = PLACEHOLDER;
+              }}
             />
             {anime.anime_name}
           </li>

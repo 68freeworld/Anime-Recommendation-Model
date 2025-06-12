@@ -12,24 +12,59 @@ app = Flask(__name__, static_folder='frontend/build', static_url_path='')
 # Simple in-memory cache for poster URLs
 _poster_cache = {}
 
+ANILIST_QUERY = """
+query ($id: Int) {
+  Media(id: $id, type: ANIME) {
+    coverImage {
+      large
+    }
+  }
+}
+"""
+
+PLACEHOLDER = "https://media.giphy.com/media/14uQ3cOFteDaU/giphy.gif"
+
 def fetch_poster(anime_id):
-    """Retrieve poster image from Jikan API and cache the result."""
+    """Retrieve poster image.
+
+    Tries Jikan first and falls back to AniList if necessary.
+    Results are cached in-memory.
+    """
     if anime_id in _poster_cache:
         return _poster_cache[anime_id]
+
+    url = ""
+    # ----- try Jikan -----
     try:
         resp = requests.get(
-            f"https://api.jikan.moe/v4/anime/{anime_id}", timeout=5,
-            headers={"User-Agent": "anime-recommender"}
+            f"https://api.jikan.moe/v4/anime/{anime_id}",
+            timeout=5,
+            headers={"User-Agent": "anime-recommender"},
         )
         if resp.status_code == 200:
             data = resp.json()
             url = data.get("data", {}).get("images", {}).get("jpg", {}).get("image_url", "")
-        else:
-            url = ""
     except Exception:
         url = ""
+
+    # ----- try AniList if Jikan failed -----
     if not url:
-        url = "https://via.placeholder.com/150x210?text=No+Image"
+        try:
+            resp = requests.post(
+                "https://graphql.anilist.co",
+                json={"query": ANILIST_QUERY, "variables": {"id": anime_id}},
+                timeout=5,
+                headers={"Content-Type": "application/json"},
+            )
+            if resp.status_code == 200:
+                data = resp.json()
+                url = data.get("data", {}).get("Media", {}).get("coverImage", {}).get("large", "")
+        except Exception:
+            url = ""
+
+    if not url:
+        url = PLACEHOLDER
+
     _poster_cache[anime_id] = url
     return url
 

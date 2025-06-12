@@ -41,8 +41,13 @@ h1 {
   object-fit: cover;
   margin-right: 1rem;
   border-radius: 4px;
-  display: block;
-  line-height: 210px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  padding: 2px;
+  line-height: normal;
+  font-size: 0.8rem;
   text-align: center;
 }
 
