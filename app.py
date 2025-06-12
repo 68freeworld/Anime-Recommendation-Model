@@ -1,12 +1,11 @@
 from flask import Flask, send_from_directory, jsonify, request
 import pandas as pd
-from models import hybrid_npr, HybridContent
+from models import hybrid_npr, HybridContent, load_data
 import os
 import requests
 
-# Load data
-anime_df_clean = pd.read_pickle("anime_df_final.pk")
-rating_df_clean = pd.read_pickle("rating_df_final.pk")
+# Load data once at startup
+rating_df_clean, anime_df_clean = load_data()
 
 app = Flask(__name__, static_folder='frontend/build', static_url_path='')
 
