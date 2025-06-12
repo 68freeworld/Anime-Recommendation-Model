@@ -6,3 +6,4 @@ item_sim.pkl
 item_similarity.gz
 user_sim.pkl
 user_similarity.gz
+__pycache__/
