@@ -123,7 +123,7 @@ Mohammed Abaan: <br>
 </a>
 <br><br>
 Ahmed Mehaisi: <br>
-<a href="mailto:b00094989@aus.edu">
+<a href="mailto:mehaisiahmed@gmail.com@aus.edu">
   <img src="https://img.shields.io/badge/Gmail-d5d5d5?style=for-the-badge&logo=gmail&logoColor=0A0209" alt="Email Ahmed" />
 </a>
 <br><br>
